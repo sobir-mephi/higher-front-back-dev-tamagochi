@@ -79,10 +79,10 @@ class MyTamagochi(AbstractTamagochi):
 
     def __init__(
             self,
-            hunger: int,
-            tiredness: int,
-            hp: int,
-            energy: int
+            hunger: int = 10,
+            tiredness: int = 0,
+            hp: int = 100,
+            energy: int = 100
     ) -> None:
         """Создаёт питомца с начальными параметрами."""
         self.hunger = hunger
