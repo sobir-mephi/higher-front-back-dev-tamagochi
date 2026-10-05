@@ -77,12 +77,19 @@ class AbstractTamagochi(ABC):
 class MyTamagochi(AbstractTamagochi):
     """Питомец для консольной игры."""
 
-    def __init__(self) -> None:
+    def __init__(
+            self,
+            hunger: int,
+            tiredness: int,
+            hp: int,
+            energy: int
+    ) -> None:
         """Создаёт питомца с начальными параметрами."""
-        self.hunger = 20
-        self.tiredness = 0
-        self.hp = 100
-        self.energy = 100
+        self.hunger = hunger
+        self.tiredness = tiredness
+        self.hp = hp
+        self.energy = energy
+        self.normalize_stats()
 
     def feed(self, food: Food) -> None:
         """Кормит питомца и уменьшает его голод.
