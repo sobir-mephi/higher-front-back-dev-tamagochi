@@ -1,7 +1,14 @@
 import os
 
 from game.clicker import MyClicker
-from game.exceptions import NotEnoughMoney, TamagochiIsGone
+from game.exceptions import (
+    EmptyItemList,
+    InvalidItemNumber,
+    ItemNotFound,
+    MedicineIsEmpty,
+    NotEnoughMoney,
+    TamagochiIsGone,
+)
 from game.game import MyGame
 from game.models import Food, Medicine
 from game.tamagochi import MyTamagochi
@@ -40,27 +47,7 @@ def show_menu(game: MyGame) -> None:
 
     :param game: текущая игра
     """
-    status = game.get_status()
-    print(f"Сумка с едой: {game.food}")
-    print(f"Сумка с лекарствами: {game.medicine}")
-    print(
-        f"\nСтатус: голод {status['hunger']}, "
-        f"усталость {status['tiredness']}, "
-        f"здоровье {status['hp']}, энергия {status['energy']}, "
-        f"монет {status['coins']}\n"
-    )
-    if game.tamagochi.is_sick():
-        print("=======Тамагочи болеет======")
-        print("=======Отдых действует менее эффективно=======")
-
-    print("1. Пойти на работу")
-    print("2. Купить еду")
-    print("3. Купить лекарство")
-    print("4. Покормить")
-    print("5. Вылечить")
-    print("6. Играть")
-    print("7. Отдых")
-    print("0. Выход")
+    game.show_menu()
 
 
 def perform_action(game: MyGame, command: str) -> str:
@@ -72,7 +59,6 @@ def perform_action(game: MyGame, command: str) -> str:
     match command:
         case '1':
             income = game.work()
-            game.tamagochi.update()
             return f'Вы заработали {income} монет'
         case '2':
             game.buy_food()
@@ -109,7 +95,13 @@ def main() -> None:
 
         try:
             output = perform_action(game, command)
-        except NotEnoughMoney as error:
+        except (
+            NotEnoughMoney,
+            EmptyItemList,
+            InvalidItemNumber,
+            ItemNotFound,
+            MedicineIsEmpty,
+        ) as error:
             output = str(error)
         except TamagochiIsGone:
             print("Питомец умер. Игра окончена.")

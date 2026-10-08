@@ -5,22 +5,22 @@ from random import randint
 
 
 class AbstractClicker(ABC):
-    """Интерфейс для кликера"""
+    """Интерфейс для кликера."""
 
     @abstractmethod
     def __init__(self) -> None:
-        """Абстрактный метод инициализации"""
+        """Абстрактный метод инициализации."""
         raise NotImplementedError
 
     @abstractmethod
     def click(self) -> None:
-        """Абстрактный метод клика для накапливания монет"""
+        """Абстрактный метод клика для накапливания монет."""
         raise NotImplementedError
 
     @property
     @abstractmethod
     def income_per_click(self) -> int:
-        """Абстрактное свойство для доступа к количеству монет за клик"""
+        """Абстрактное свойство для доступа к количеству монет за клик."""
         raise NotImplementedError
 
 
@@ -33,15 +33,15 @@ class MyClicker(AbstractClicker):
         :param min_income: минимальный заработок
         :param max_income: максимальный заработок
         """
-        self.min_income = min_income
-        self.max_income = max_income
+        self._min_income = min_income
+        self._max_income = max_income
         self._income_per_click = 0
 
     def click(self) -> None:
         """Определяет заработок за текущий клик."""
         self._income_per_click = randint(
-            self.min_income,
-            self.max_income,
+            self._min_income,
+            self._max_income,
         )
 
     @property

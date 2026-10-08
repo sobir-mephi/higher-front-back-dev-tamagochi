@@ -1,16 +1,42 @@
 """Интерфейс и реализация класса игры."""
 
 from abc import ABC, abstractmethod
+from copy import copy
 from typing import Any
 
 from .clicker import AbstractClicker
-from .exceptions import NotEnoughMoney
+from .exceptions import (
+    EmptyItemList,
+    InvalidItemNumber,
+    ItemNotFound,
+    NotEnoughMoney,
+)
 from .models import Food, Medicine
 from .tamagochi import AbstractTamagochi
 
 
+STATUS_TEMPLATE = (
+    '\nСтатус: голод {hunger}, усталость {tiredness}, '
+    'здоровье {hp}, энергия {energy}, монет {coins}\n'
+)
+MENU = '\n'.join((
+    '1. Пойти на работу',
+    '2. Купить еду',
+    '3. Купить лекарство',
+    '4. Покормить',
+    '5. Вылечить',
+    '6. Играть',
+    '7. Отдых',
+    '0. Выход',
+))
+SICK_MESSAGE = '\n'.join((
+    '=======Тамагочи болеет======',
+    '=======Отдых действует менее эффективно=======',
+))
+
+
 class AbstractGame(ABC):
-    """Интерфейс для логики игры"""
+    """Интерфейс для логики игры."""
 
     @abstractmethod
     def __init__(
@@ -20,8 +46,7 @@ class AbstractGame(ABC):
         all_food: list[Food],
         all_medicine: list[Medicine]
     ):
-        """
-        Абстрактный метод инициализации класса игры
+        """Абстрактный метод инициализации класса игры.
 
         :param tamagochi: экземпляр тамагочи
         :param clicker: экземпляр кликера
@@ -32,8 +57,7 @@ class AbstractGame(ABC):
 
     @abstractmethod
     def work(self) -> int:
-        """
-        Абстрактный метод для логики действия "работа
+        """Абстрактный метод для логики действия «работа».
 
         :return: количество заработанных монет
         """
@@ -41,38 +65,37 @@ class AbstractGame(ABC):
 
     @abstractmethod
     def buy_food(self) -> None:
-        """Абстрактный метод для покупки еды"""
+        """Абстрактный метод для покупки еды."""
         raise NotImplementedError
 
     @abstractmethod
     def buy_medicine(self) -> None:
-        """Абстрактный метод для покупки лекарства"""
+        """Абстрактный метод для покупки лекарства."""
         raise NotImplementedError
 
     @abstractmethod
     def feed_tamagochi(self) -> None:
-        """Абстрактный метод для кормления тамагочи"""
+        """Абстрактный метод для кормления тамагочи."""
         raise NotImplementedError
 
     @abstractmethod
     def heal_tamagochi(self) -> None:
-        """Абстрактный метод для лечения тамагочи"""
+        """Абстрактный метод для лечения тамагочи."""
         raise NotImplementedError
 
     @abstractmethod
     def rest_tamagochi(self) -> None:
-        """Абстрактный метод для отдыха тамагочи"""
+        """Абстрактный метод для отдыха тамагочи."""
         raise NotImplementedError
 
     @abstractmethod
     def play_with_tamagochi(self) -> None:
-        """Абстрактный метод для игры с тамагочи"""
+        """Абстрактный метод для игры с тамагочи."""
         raise NotImplementedError
 
     @abstractmethod
     def get_status(self) -> dict[str, Any]:
-        """
-        Абстрактный метод для получения статуса (всех характеристик) тамагочи
+        """Абстрактный метод для получения статуса тамагочи.
 
         :return: словарь со всеми характеристиками тамагочи
         """
@@ -81,8 +104,7 @@ class AbstractGame(ABC):
     @property
     @abstractmethod
     def food(self) -> list[Food]:
-        """
-        Абстрактное свойство для доступа к сумке с едой
+        """Абстрактное свойство для доступа к сумке с едой.
 
         :return: список с имеющимися (купленными) объектами еды
         """
@@ -91,8 +113,7 @@ class AbstractGame(ABC):
     @property
     @abstractmethod
     def medicine(self) -> list[Medicine]:
-        """
-        Абстрактное свойство для доступа к сумке с лекарствами
+        """Абстрактное свойство для доступа к сумке с лекарствами.
 
         :return: список с имеющимися (купленными) объектами лекарств
         """
@@ -116,11 +137,11 @@ class MyGame(AbstractGame):
         :param all_food: еда, доступная в магазине
         :param all_medicine: доступные лекарства
         """
-        self.tamagochi = tamagochi
-        self.clicker = clicker
-        self.all_food = all_food
-        self.all_medicine = all_medicine
-        self.coins = 0
+        self._tamagochi = tamagochi
+        self._clicker = clicker
+        self._all_food = list(all_food)
+        self._all_medicine = list(all_medicine)
+        self._coins = 0
         self._food: list[Food] = []
         self._medicine: list[Medicine] = []
 
@@ -129,49 +150,44 @@ class MyGame(AbstractGame):
 
         :return: количество заработанных монет
         """
-        self.clicker.click()
-        income = self.clicker.income_per_click
-        self.coins += income
+        self._clicker.click()
+        income = self._clicker.income_per_click
+        self._coins += income
+        self._tamagochi.update()
         return income
 
     def buy_food(self) -> None:
         """Купить еду на выбор."""
-        food = choose_item(self.all_food, 'Выберите еду')
+        food = choose_item(self._all_food, 'Выберите еду')
         if food is None:
             return
 
-        if self.coins < food.price:
+        if self._coins < food.price:
             raise NotEnoughMoney(
                 'Недостаточно монет для покупки еды',
             )
 
-        self.coins -= food.price
+        self._coins -= food.price
         self._food.append(food)
-        self.tamagochi.update()
+        self._tamagochi.update()
 
     def buy_medicine(self) -> None:
         """Купить лекарства на выбор."""
         medicine = choose_item(
-            self.all_medicine,
+            self._all_medicine,
             'Выберите лекарство',
         )
         if medicine is None:
             return
 
-        if self.coins < medicine.price:
+        if self._coins < medicine.price:
             raise NotEnoughMoney(
                 'Недостаточно монет для покупки лекарства',
             )
 
-        self.coins -= medicine.price
-        purchased_medicine = Medicine(
-            name=medicine.name,
-            price=medicine.price,
-            heal_hp=medicine.heal_hp,
-            number_of_uses=medicine.number_of_uses,
-        )
-        self._medicine.append(purchased_medicine)
-        self.tamagochi.update()
+        self._coins -= medicine.price
+        self._medicine.append(copy(medicine))
+        self._tamagochi.update()
 
     def feed_tamagochi(self) -> None:
         """Кормит питомца выбранной едой."""
@@ -182,9 +198,9 @@ class MyGame(AbstractGame):
         if food is None:
             return
 
-        self.tamagochi.feed(food)
+        self._tamagochi.feed(food)
         self._food.remove(food)
-        self.tamagochi.update()
+        self._tamagochi.update()
 
     def heal_tamagochi(self) -> None:
         """Лечит питомца выбранным лекарством."""
@@ -195,28 +211,28 @@ class MyGame(AbstractGame):
         if medicine is None:
             return
 
-        self.tamagochi.heal(medicine)
+        self._tamagochi.heal(medicine)
         if medicine.is_empty():
             self._medicine.remove(medicine)
-        self.tamagochi.update()
+        self._tamagochi.update()
 
     def rest_tamagochi(self) -> None:
         """Даёт питомцу отдохнуть."""
-        self.tamagochi.rest()
-        self.tamagochi.update()
+        self._tamagochi.rest()
+        self._tamagochi.update()
 
     def play_with_tamagochi(self) -> None:
         """Играет с питомцем."""
-        self.tamagochi.play()
-        self.tamagochi.update()
+        self._tamagochi.play()
+        self._tamagochi.update()
 
     def get_status(self) -> dict[str, Any]:
         """Возвращает общий статус игры.
 
         :return: показатели питомца и монеты
         """
-        status = self.tamagochi.status.copy()
-        status['coins'] = self.coins
+        status = self._tamagochi.status.copy()
+        status['coins'] = self._coins
         return status
 
     @property
@@ -225,7 +241,7 @@ class MyGame(AbstractGame):
 
         :return: список еды в сумке
         """
-        return self._food
+        return list(self._food)
 
     @property
     def medicine(self) -> list[Medicine]:
@@ -233,34 +249,19 @@ class MyGame(AbstractGame):
 
         :return: список лекарств в сумке
         """
-        return self._medicine
+        return list(self._medicine)
 
     def show_menu(self) -> None:
-        """Показывает состояние питомца и доступные действия.
-
-        :param game: текущая игра
-        """
-        status = self.get_status()
-        print(f"Сумка с едой: {self.food}")
-        print(f"Сумка с лекарствами: {self.medicine}")
-        print(
-            f"\nСтатус: голод {status['hunger']}, "
-            f"усталость {status['tiredness']}, "
-            f"здоровье {status['hp']}, энергия {status['energy']}, "
-            f"монет {status['coins']}\n"
-        )
-        if self.tamagochi.is_sick():
-            print("=======Тамагочи болеет======")
-            print("=======Отдых действует менее эффективно=======")
-
-        print("1. Пойти на работу")
-        print("2. Купить еду")
-        print("3. Купить лекарство")
-        print("4. Покормить")
-        print("5. Вылечить")
-        print("6. Играть")
-        print("7. Отдых")
-        print("0. Выход")
+        """Показывает состояние питомца и доступные действия."""
+        lines = [
+            f'Сумка с едой: {self.food}',
+            f'Сумка с лекарствами: {self.medicine}',
+            STATUS_TEMPLATE.format(**self.get_status()),
+        ]
+        if self._tamagochi.is_sick():
+            lines.append(SICK_MESSAGE)
+        lines.append(MENU)
+        print('\n'.join(lines))
 
 
 def choose_item(items: list[Any], title: str) -> Any | None:
@@ -271,24 +272,22 @@ def choose_item(items: list[Any], title: str) -> Any | None:
     :return: предмет или None
     """
     if not items:
-        print('Список пуст')
-        return
+        raise EmptyItemList('Список пуст')
 
-    print(title)
+    lines = [title]
     for number, item in enumerate(items, start=1):
-        print(f'{number}. {item}')
-    print('0. Отмена')
+        lines.append(f'{number}. {item}')
+    lines.append('0. Отмена')
+    print('\n'.join(lines))
 
     try:
         number = int(input('Введите номер: '))
-    except ValueError:
-        print('Нужно ввести номер из списка')
-        return
+    except ValueError as error:
+        raise InvalidItemNumber('Нужно ввести номер из списка') from error
 
     if number == 0:
         return
     if number < 1 or number > len(items):
-        print('Такого номера нет')
-        return
+        raise ItemNotFound('Такого номера нет')
 
     return items[number - 1]
