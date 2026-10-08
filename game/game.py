@@ -14,12 +14,11 @@ from .exceptions import (
 from .models import Food, Medicine
 from .tamagochi import AbstractTamagochi
 
-
 STATUS_TEMPLATE = (
     '\nСтатус: голод {hunger}, усталость {tiredness}, '
     'здоровье {hp}, энергия {energy}, монет {coins}\n'
 )
-MENU = '\n'.join((
+MENU_ITEMS = (
     '1. Пойти на работу',
     '2. Купить еду',
     '3. Купить лекарство',
@@ -28,11 +27,12 @@ MENU = '\n'.join((
     '6. Играть',
     '7. Отдых',
     '0. Выход',
-))
-SICK_MESSAGE = '\n'.join((
-    '=======Тамагочи болеет======',
-    '=======Отдых действует менее эффективно=======',
-))
+)
+MENU = '\n'.join(MENU_ITEMS)
+SICK_MESSAGE = (
+    '=======Тамагочи болеет======\n'
+    '=======Отдых действует менее эффективно======='
+)
 
 
 class AbstractGame(ABC):

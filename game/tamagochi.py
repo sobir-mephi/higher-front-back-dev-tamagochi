@@ -5,7 +5,6 @@ from abc import ABC, abstractmethod
 from .exceptions import MedicineIsEmpty, TamagochiIsGone
 from .models import Food, Medicine
 
-
 DEFAULT_HUNGER = 10
 DEFAULT_TIREDNESS = 0
 DEFAULT_HP = 100
@@ -98,12 +97,10 @@ class MyTamagochi(AbstractTamagochi):
         :param food: еда, которой кормят питомца
         """
         self._hunger -= food.satiety
-        if self._hunger < 0:
-            self._hunger = 0
+        self._hunger = max(self._hunger, 0)
 
         self._energy -= 2
-        if self._energy < 0:
-            self._energy = 0
+        self._energy = max(self._energy, 0)
 
     def play(self) -> None:
         """Играет с питомцем и расходует энергию."""
